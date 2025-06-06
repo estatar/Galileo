@@ -3,11 +3,11 @@ import Planet from './Planet';
 import Orbit from './Orbit';
 
 const SpaceAnimation: React.FC = () => {
-  // Define three orbital planes evenly distributed around the planet
+  // Define three orbital planes with asymmetric distribution
   const orbitalPlanes = [
-    { rotation: 0, size: 65, speed: 30 },    // First plane at 0 degrees
-    { rotation: 120, size: 80, speed: 30 },  // Second plane at 120 degrees
-    { rotation: 240, size: 95, speed: 30 },  // Third plane at 240 degrees
+    { rotation: 15, size: 70, speed: 30 },    // First plane slightly tilted
+    { rotation: 155, size: 85, speed: 32 },   // Second plane offset from perfect symmetry
+    { rotation: 275, size: 100, speed: 28 },  // Third plane at an irregular angle
   ];
 
   // Number of satellites per plane
@@ -53,3 +53,5 @@ const SpaceAnimation: React.FC = () => {
 };
 
 export default SpaceAnimation;
+
+export default SpaceAnimation
