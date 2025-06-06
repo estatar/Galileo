@@ -3,11 +3,11 @@ import Planet from './Planet';
 import Orbit from './Orbit';
 
 const SpaceAnimation: React.FC = () => {
-  // Define three orbital planes with consistent speeds
+  // Define three orbital planes evenly distributed around the planet
   const orbitalPlanes = [
-    { rotation: 15, size: 65, speed: 30 },
-    { rotation: -25, size: 80, speed: 30 },
-    { rotation: 35, size: 95, speed: 30 },
+    { rotation: 0, size: 65, speed: 30 },    // First plane at 0 degrees
+    { rotation: 120, size: 80, speed: 30 },  // Second plane at 120 degrees
+    { rotation: 240, size: 95, speed: 30 },  // Third plane at 240 degrees
   ];
 
   // Number of satellites per plane
