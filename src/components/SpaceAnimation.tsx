@@ -3,12 +3,15 @@ import Planet from './Planet';
 import Orbit from './Orbit';
 
 const SpaceAnimation: React.FC = () => {
-  // Create three orbital planes with 9 satellites each
+  // Define three orbital planes with consistent speeds
   const orbitalPlanes = [
-    { rotation: 15, baseDelay: 0 },
-    { rotation: -25, baseDelay: -5 },
-    { rotation: 35, baseDelay: -10 },
+    { rotation: 15, size: 65, speed: 30 },
+    { rotation: -25, size: 80, speed: 30 },
+    { rotation: 35, size: 95, speed: 30 },
   ];
+
+  // Number of satellites per plane
+  const satellitesPerPlane = 9;
 
   return (
     <div className="relative w-full max-w-2xl aspect-square my-8 md:my-12">
@@ -25,17 +28,24 @@ const SpaceAnimation: React.FC = () => {
       {/* Orbital planes with satellites */}
       {orbitalPlanes.map((plane, planeIndex) => (
         <React.Fragment key={planeIndex}>
-          {/* Create 9 satellites per plane */}
-          {Array.from({ length: 9 }).map((_, satIndex) => (
-            <Orbit 
-              key={`${planeIndex}-${satIndex}`}
-              color={satIndex % 3 === 0 ? "cyan" : satIndex % 3 === 1 ? "blue" : "yellow"}
-              duration={30 + (satIndex * 2)} // Vary the orbital period
-              size={65 + (planeIndex * 15)} // Different orbital radius for each plane
-              delay={plane.baseDelay - (satIndex * 2)} // Stagger the satellites
-              rotation={plane.rotation + (satIndex * (360 / 9))} // Distribute satellites evenly
-            />
-          ))}
+          {/* Create evenly distributed satellites per plane */}
+          {Array.from({ length: satellitesPerPlane }).map((_, satIndex) => {
+            // Calculate even distribution angle for each satellite
+            const satelliteRotation = plane.rotation + (satIndex * (360 / satellitesPerPlane));
+            // Stagger the starting positions within each plane
+            const startDelay = -(satIndex * (plane.speed / satellitesPerPlane));
+            
+            return (
+              <Orbit 
+                key={`${planeIndex}-${satIndex}`}
+                color={satIndex % 3 === 0 ? "cyan" : satIndex % 3 === 1 ? "blue" : "yellow"}
+                duration={plane.speed}
+                size={plane.size}
+                delay={startDelay}
+                rotation={satelliteRotation}
+              />
+            );
+          })}
         </React.Fragment>
       ))}
     </div>
