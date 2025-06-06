@@ -53,5 +53,3 @@ const SpaceAnimation: React.FC = () => {
 };
 
 export default SpaceAnimation;
-
-export default SpaceAnimation
