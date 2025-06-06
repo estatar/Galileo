@@ -74,20 +74,6 @@ body {
   animation: pulse-slow 4s ease-in-out infinite;
 }
 
-/* Add very slow spin animation for Earth rotation */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 120s linear infinite;
-}
-
 /* Add responsive styling for different device sizes */
 @media (max-width: 640px) {
   .orbit-path {
