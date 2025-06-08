@@ -3,12 +3,13 @@ import { Satellite, Menu, X } from 'lucide-react';
 import SpaceAnimation from './components/SpaceAnimation';
 import GalileoInfo from './components/GalileoInfo';
 import TechnologyPage from './components/TechnologyPage';
+import GpsTestPage from './components/GpsTestPage';
 
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'overview' | 'technology'>('overview');
+  const [currentPage, setCurrentPage] = useState<'overview' | 'technology' | 'gpstest'>('overview');
 
-  const handleNavigation = (page: 'overview' | 'technology') => {
+  const handleNavigation = (page: 'overview' | 'technology' | 'gpstest') => {
     setCurrentPage(page);
     setIsMenuOpen(false);
   };
@@ -45,7 +46,12 @@ function App() {
           >
             Technologie
           </NavLink>
-          <NavLink href="#">Services</NavLink>
+          <NavLink 
+            onClick={() => handleNavigation('gpstest')} 
+            active={currentPage === 'gpstest'}
+          >
+            Galileo GPS Test
+          </NavLink>
           <NavLink href="#">Kontakt</NavLink>
         </nav>
 
@@ -72,7 +78,12 @@ function App() {
                 >
                   Technologie
                 </MobileNavLink>
-                <MobileNavLink href="#">Services</MobileNavLink>
+                <MobileNavLink 
+                  onClick={() => handleNavigation('gpstest')} 
+                  active={currentPage === 'gpstest'}
+                >
+                  Galileo GPS Test
+                </MobileNavLink>
                 <MobileNavLink href="#">Kontakt</MobileNavLink>
               </nav>
             </div>
@@ -86,8 +97,10 @@ function App() {
             <SpaceAnimation />
             <GalileoInfo />
           </>
-        ) : (
+        ) : currentPage === 'technology' ? (
           <TechnologyPage onBackToOverview={() => handleNavigation('overview')} />
+        ) : (
+          <GpsTestPage onBackToOverview={() => handleNavigation('overview')} />
         )}
       </main>
       
