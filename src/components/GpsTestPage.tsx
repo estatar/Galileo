@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Satellite, MapPin, Signal, Zap, Clock, Target, Radar } from 'lucide-react';
+import { ArrowLeft, Satellite, MapPin, Signal, Zap, Clock, Target, Radio, Waves } from 'lucide-react';
 
 interface GpsTestPageProps {
   onBackToOverview: () => void;
@@ -20,6 +20,7 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
   const [satellites, setSatellites] = useState<SatelliteData[]>([]);
   const [location, setLocation] = useState({ lat: 0, lng: 0, accuracy: 0 });
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'scanning' | 'connecting' | 'connected'>('idle');
+  const [activeSignals, setActiveSignals] = useState<number[]>([]);
 
   // Stuttgart coordinates
   const stuttgartCoords = { lat: 48.7758, lng: 9.1829 };
@@ -42,6 +43,7 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
     setScanProgress(0);
     setSatellites([]);
     setLocation({ lat: 0, lng: 0, accuracy: 0 });
+    setActiveSignals([]);
   };
 
   useEffect(() => {
@@ -98,6 +100,27 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
     return () => clearInterval(interval);
   }, [isScanning]);
 
+  // Generate active signal animations
+  useEffect(() => {
+    if (isScanning) {
+      const signalInterval = setInterval(() => {
+        setActiveSignals(prev => {
+          const newSignals = [...prev];
+          // Add new signal
+          if (Math.random() > 0.3) {
+            newSignals.push(Date.now());
+          }
+          // Remove old signals (after 3 seconds)
+          return newSignals.filter(signal => Date.now() - signal < 3000);
+        });
+      }, 400);
+
+      return () => clearInterval(signalInterval);
+    } else {
+      setActiveSignals([]);
+    }
+  }, [isScanning]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'searching': return 'text-yellow-400';
@@ -142,14 +165,14 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
 
       {/* Main Control Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Panel - Scanner */}
+        {/* Left Panel - Signal Scanner */}
         <div className="space-y-6">
-          {/* Radar Display */}
+          {/* Signal Scanner Display */}
           <div className="bg-gray-900/70 backdrop-blur-sm rounded-xl p-8 border border-gray-800">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-cyan-400 flex items-center">
-                <Radar className="w-6 h-6 mr-2" />
-                Satelliten-Radar
+                <Waves className="w-6 h-6 mr-2" />
+                Signal-Scanner
               </h3>
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                 connectionStatus === 'connected' ? 'bg-green-900/50 text-green-400' :
@@ -161,50 +184,140 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
               </div>
             </div>
 
-            {/* Radar Circle */}
-            <div className="relative w-80 h-80 mx-auto">
-              <div className="absolute inset-0 rounded-full border-2 border-cyan-900/30 bg-gradient-radial from-cyan-950/20 to-transparent">
-                {/* Radar sweep */}
-                {isScanning && (
-                  <div className="absolute inset-0 rounded-full overflow-hidden">
-                    <div className="absolute top-1/2 left-1/2 w-1/2 h-0.5 bg-gradient-to-r from-cyan-400 to-transparent origin-left animate-spin" 
-                         style={{ animationDuration: '2s' }}></div>
-                  </div>
-                )}
-                
-                {/* Grid lines */}
-                <div className="absolute inset-0 rounded-full border border-cyan-900/20"></div>
-                <div className="absolute inset-8 rounded-full border border-cyan-900/20"></div>
-                <div className="absolute inset-16 rounded-full border border-cyan-900/20"></div>
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-cyan-900/20"></div>
-                <div className="absolute top-0 bottom-0 left-1/2 w-px bg-cyan-900/20"></div>
-
-                {/* Center point */}
-                <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-cyan-400 rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
-
-                {/* Satellites */}
-                {satellites.map((sat, index) => {
-                  const angle = (sat.azimuth * Math.PI) / 180;
-                  const distance = (90 - sat.elevation) * 1.5; // Convert elevation to distance from center
-                  const x = Math.cos(angle) * distance;
-                  const y = Math.sin(angle) * distance;
-                  
-                  return (
-                    <div
-                      key={sat.id}
-                      className={`absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2 ${
-                        sat.status === 'locked' ? 'bg-green-400 animate-pulse' :
-                        sat.status === 'acquiring' ? 'bg-orange-400' :
-                        'bg-yellow-400'
-                      }`}
-                      style={{
-                        left: `calc(50% + ${x}px)`,
-                        top: `calc(50% + ${y}px)`
-                      }}
-                      title={`${sat.name} - ${sat.status}`}
+            {/* Signal Visualization */}
+            <div className="relative w-full h-80 bg-gray-950/50 rounded-lg border border-gray-800 overflow-hidden">
+              {/* Grid background */}
+              <div className="absolute inset-0">
+                <svg className="w-full h-full" viewBox="0 0 400 320">
+                  {/* Horizontal grid lines */}
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <line
+                      key={`h-${i}`}
+                      x1="0"
+                      y1={i * 40}
+                      x2="400"
+                      y2={i * 40}
+                      stroke="rgb(55, 65, 81)"
+                      strokeWidth="0.5"
+                      opacity="0.3"
                     />
-                  );
-                })}
+                  ))}
+                  {/* Vertical grid lines */}
+                  {Array.from({ length: 11 }).map((_, i) => (
+                    <line
+                      key={`v-${i}`}
+                      x1={i * 40}
+                      y1="0"
+                      x2={i * 40}
+                      y2="320"
+                      stroke="rgb(55, 65, 81)"
+                      strokeWidth="0.5"
+                      opacity="0.3"
+                    />
+                  ))}
+                </svg>
+              </div>
+
+              {/* Center antenna */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                <div className="w-4 h-8 bg-gradient-to-t from-cyan-500 to-cyan-300 rounded-t-full relative">
+                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* Signal waves */}
+              {isScanning && (
+                <>
+                  {/* Continuous scanning beam */}
+                  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 origin-bottom">
+                    <div 
+                      className="w-1 bg-gradient-to-t from-cyan-500 to-transparent opacity-60"
+                      style={{ 
+                        height: '280px',
+                        animation: 'sweep 3s linear infinite',
+                        transformOrigin: 'bottom center'
+                      }}
+                    ></div>
+                  </div>
+
+                  {/* Signal pulses */}
+                  {activeSignals.map((signal, index) => (
+                    <div
+                      key={signal}
+                      className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+                      style={{
+                        animation: `signalPulse 3s ease-out forwards`,
+                        animationDelay: `${index * 0.1}s`
+                      }}
+                    >
+                      <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                    </div>
+                  ))}
+
+                  {/* Satellite indicators */}
+                  {satellites.map((sat, index) => {
+                    const angle = (sat.azimuth - 90) * (Math.PI / 180); // Convert to radians, adjust for top = 0°
+                    const distance = (90 - sat.elevation) * 2.8; // Scale elevation to distance
+                    const x = Math.cos(angle) * distance;
+                    const y = Math.sin(angle) * distance;
+                    
+                    return (
+                      <div
+                        key={sat.id}
+                        className={`absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2 ${
+                          sat.status === 'locked' ? 'bg-green-400 shadow-lg shadow-green-400/50' :
+                          sat.status === 'acquiring' ? 'bg-orange-400 shadow-lg shadow-orange-400/50' :
+                          'bg-yellow-400 shadow-lg shadow-yellow-400/50'
+                        }`}
+                        style={{
+                          left: `calc(50% + ${x}px)`,
+                          top: `calc(50% + ${y}px)`,
+                          animation: sat.status === 'locked' ? 'pulse 2s infinite' : 'none'
+                        }}
+                        title={`${sat.name} - ${sat.status}`}
+                      >
+                        {/* Signal strength indicator */}
+                        <div 
+                          className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                            sat.signalStrength > 40 ? 'bg-green-300' :
+                            sat.signalStrength > 25 ? 'bg-yellow-300' :
+                            'bg-red-300'
+                          }`}
+                          style={{ fontSize: '6px' }}
+                        ></div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Frequency bands visualization */}
+              <div className="absolute top-4 left-4 space-y-2">
+                <div className="flex items-center space-x-2 text-xs">
+                  <div className="w-3 h-1 bg-cyan-400 rounded"></div>
+                  <span className="text-cyan-400">E1 - 1575 MHz</span>
+                </div>
+                <div className="flex items-center space-x-2 text-xs">
+                  <div className="w-3 h-1 bg-blue-400 rounded"></div>
+                  <span className="text-blue-400">E5a - 1176 MHz</span>
+                </div>
+                <div className="flex items-center space-x-2 text-xs">
+                  <div className="w-3 h-1 bg-purple-400 rounded"></div>
+                  <span className="text-purple-400">E5b - 1207 MHz</span>
+                </div>
+              </div>
+
+              {/* Signal strength meter */}
+              <div className="absolute top-4 right-4">
+                <div className="text-xs text-gray-400 mb-2">Signal</div>
+                <div className="w-4 h-32 bg-gray-800 rounded-full relative overflow-hidden">
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-500"
+                    style={{ 
+                      height: `${Math.min((satellites.reduce((sum, sat) => sum + sat.signalStrength, 0) / satellites.length) * 2, 100)}%` 
+                    }}
+                  ></div>
+                </div>
               </div>
             </div>
 
