@@ -74,32 +74,6 @@ body {
   animation: pulse-slow 4s ease-in-out infinite;
 }
 
-/* Signal scanner animations */
-@keyframes sweep {
-  0% {
-    transform: rotate(-60deg);
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: rotate(60deg);
-    opacity: 0.8;
-  }
-}
-
-@keyframes signalPulse {
-  0% {
-    transform: translate(-50%, 0) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -280px) scale(0.3);
-    opacity: 0;
-  }
-}
-
 /* Add responsive styling for different device sizes */
 @media (max-width: 640px) {
   .orbit-path {

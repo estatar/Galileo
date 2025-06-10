@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Satellite, MapPin, Signal, Zap, Clock, Target, Radio, Waves } from 'lucide-react';
+import { ArrowLeft, Satellite, MapPin, Signal, Zap, Clock, Target, Activity, Wifi } from 'lucide-react';
 
 interface GpsTestPageProps {
   onBackToOverview: () => void;
@@ -14,13 +14,22 @@ interface SatelliteData {
   status: 'searching' | 'acquiring' | 'locked' | 'lost';
 }
 
+interface SignalWave {
+  id: number;
+  angle: number;
+  strength: number;
+  frequency: string;
+  color: string;
+}
+
 const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [satellites, setSatellites] = useState<SatelliteData[]>([]);
   const [location, setLocation] = useState({ lat: 0, lng: 0, accuracy: 0 });
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'scanning' | 'connecting' | 'connected'>('idle');
-  const [activeSignals, setActiveSignals] = useState<number[]>([]);
+  const [signalWaves, setSignalWaves] = useState<SignalWave[]>([]);
+  const [detectedSignals, setDetectedSignals] = useState<number>(0);
 
   // Stuttgart coordinates
   const stuttgartCoords = { lat: 48.7758, lng: 9.1829 };
@@ -43,7 +52,8 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
     setScanProgress(0);
     setSatellites([]);
     setLocation({ lat: 0, lng: 0, accuracy: 0 });
-    setActiveSignals([]);
+    setSignalWaves([]);
+    setDetectedSignals(0);
   };
 
   useEffect(() => {
@@ -100,24 +110,38 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
     return () => clearInterval(interval);
   }, [isScanning]);
 
-  // Generate active signal animations
+  // Generate signal waves animation
   useEffect(() => {
     if (isScanning) {
-      const signalInterval = setInterval(() => {
-        setActiveSignals(prev => {
-          const newSignals = [...prev];
-          // Add new signal
-          if (Math.random() > 0.3) {
-            newSignals.push(Date.now());
+      const waveInterval = setInterval(() => {
+        setSignalWaves(prev => {
+          const newWaves = [...prev];
+          
+          // Add new signal waves
+          if (Math.random() > 0.4) {
+            const frequencies = ['E1', 'E5a', 'E5b', 'E6'];
+            const colors = ['#06b6d4', '#3b82f6', '#8b5cf6', '#f59e0b'];
+            const freqIndex = Math.floor(Math.random() * frequencies.length);
+            
+            newWaves.push({
+              id: Date.now() + Math.random(),
+              angle: Math.random() * 360,
+              strength: Math.random() * 100 + 50,
+              frequency: frequencies[freqIndex],
+              color: colors[freqIndex]
+            });
           }
-          // Remove old signals (after 3 seconds)
-          return newSignals.filter(signal => Date.now() - signal < 3000);
+          
+          // Remove old waves
+          return newWaves.filter(wave => Date.now() - wave.id < 4000);
         });
-      }, 400);
+        
+        setDetectedSignals(prev => Math.min(prev + Math.floor(Math.random() * 3), 999));
+      }, 300);
 
-      return () => clearInterval(signalInterval);
+      return () => clearInterval(waveInterval);
     } else {
-      setActiveSignals([]);
+      setSignalWaves([]);
     }
   }, [isScanning]);
 
@@ -134,9 +158,9 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
   const getConnectionStatusText = () => {
     switch (connectionStatus) {
       case 'idle': return 'Bereit zum Scannen';
-      case 'scanning': return 'Suche nach Galileo-Satelliten...';
-      case 'connecting': return 'Verbindung wird hergestellt...';
-      case 'connected': return 'Verbunden mit Galileo-Netzwerk';
+      case 'scanning': return 'Analysiere Signalspektrum...';
+      case 'connecting': return 'Trianguliere Position...';
+      case 'connected': return 'Galileo-Verbindung aktiv';
     }
   };
 
@@ -156,23 +180,23 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
       {/* Title */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent">
-          Galileo GPS Test
+          Galileo Signal-Analyzer
         </h1>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-          Verbindung zu Galileo-Satelliten testen und Positionsdaten in Echtzeit abrufen
+          Echtzeit-Analyse von Galileo-Satellitensignalen und Spektrum-Visualisierung
         </p>
       </div>
 
       {/* Main Control Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Panel - Signal Scanner */}
+        {/* Left Panel - Signal Visualizer */}
         <div className="space-y-6">
-          {/* Signal Scanner Display */}
+          {/* Signal Spectrum Analyzer */}
           <div className="bg-gray-900/70 backdrop-blur-sm rounded-xl p-8 border border-gray-800">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-cyan-400 flex items-center">
-                <Waves className="w-6 h-6 mr-2" />
-                Signal-Scanner
+                <Activity className="w-6 h-6 mr-2" />
+                Spektrum-Analyzer
               </h3>
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                 connectionStatus === 'connected' ? 'bg-green-900/50 text-green-400' :
@@ -185,172 +209,162 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
             </div>
 
             {/* Signal Visualization */}
-            <div className="relative w-full h-80 bg-gray-950/50 rounded-lg border border-gray-800 overflow-hidden">
-              {/* Grid background */}
+            <div className="relative w-full h-80 bg-black/50 rounded-lg border border-gray-700 overflow-hidden">
+              {/* Oscilloscope-style background */}
               <div className="absolute inset-0">
                 <svg className="w-full h-full" viewBox="0 0 400 320">
-                  {/* Horizontal grid lines */}
-                  {Array.from({ length: 9 }).map((_, i) => (
+                  {/* Grid */}
+                  {Array.from({ length: 17 }).map((_, i) => (
                     <line
                       key={`h-${i}`}
                       x1="0"
-                      y1={i * 40}
+                      y1={i * 20}
                       x2="400"
-                      y2={i * 40}
-                      stroke="rgb(55, 65, 81)"
+                      y2={i * 20}
+                      stroke="#1f2937"
                       strokeWidth="0.5"
-                      opacity="0.3"
+                      opacity={i % 4 === 0 ? "0.6" : "0.3"}
                     />
                   ))}
-                  {/* Vertical grid lines */}
-                  {Array.from({ length: 11 }).map((_, i) => (
+                  {Array.from({ length: 21 }).map((_, i) => (
                     <line
                       key={`v-${i}`}
-                      x1={i * 40}
+                      x1={i * 20}
                       y1="0"
-                      x2={i * 40}
+                      x2={i * 20}
                       y2="320"
-                      stroke="rgb(55, 65, 81)"
+                      stroke="#1f2937"
                       strokeWidth="0.5"
-                      opacity="0.3"
+                      opacity={i % 4 === 0 ? "0.6" : "0.3"}
                     />
                   ))}
                 </svg>
               </div>
 
-              {/* Center antenna */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-                <div className="w-4 h-8 bg-gradient-to-t from-cyan-500 to-cyan-300 rounded-t-full relative">
-                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
-                </div>
-              </div>
-
-              {/* Signal waves */}
+              {/* Signal Waves */}
               {isScanning && (
-                <>
-                  {/* Continuous scanning beam */}
-                  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 origin-bottom">
-                    <div 
-                      className="w-1 bg-gradient-to-t from-cyan-500 to-transparent opacity-60"
-                      style={{ 
-                        height: '280px',
-                        animation: 'sweep 3s linear infinite',
-                        transformOrigin: 'bottom center'
-                      }}
-                    ></div>
+                <div className="absolute inset-0">
+                  {/* Frequency spectrum bars */}
+                  <div className="absolute bottom-0 left-0 right-0 flex items-end justify-around h-full p-4">
+                    {['E1', 'E5a', 'E5b', 'E6'].map((freq, index) => {
+                      const height = satellites.length > index ? 
+                        (satellites[index]?.signalStrength || 0) * 4 : 
+                        Math.random() * 100 + 20;
+                      const colors = ['#06b6d4', '#3b82f6', '#8b5cf6', '#f59e0b'];
+                      
+                      return (
+                        <div key={freq} className="flex flex-col items-center">
+                          <div 
+                            className="w-12 bg-gradient-to-t from-current to-transparent rounded-t transition-all duration-500"
+                            style={{ 
+                              height: `${height}px`,
+                              color: colors[index],
+                              boxShadow: `0 0 20px ${colors[index]}40`
+                            }}
+                          ></div>
+                          <div className="text-xs text-gray-400 mt-2">{freq}</div>
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  {/* Signal pulses */}
-                  {activeSignals.map((signal, index) => (
-                    <div
-                      key={signal}
-                      className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-                      style={{
-                        animation: `signalPulse 3s ease-out forwards`,
-                        animationDelay: `${index * 0.1}s`
-                      }}
-                    >
-                      <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
-                    </div>
-                  ))}
-
-                  {/* Satellite indicators */}
-                  {satellites.map((sat, index) => {
-                    const angle = (sat.azimuth - 90) * (Math.PI / 180); // Convert to radians, adjust for top = 0°
-                    const distance = (90 - sat.elevation) * 2.8; // Scale elevation to distance
-                    const x = Math.cos(angle) * distance;
-                    const y = Math.sin(angle) * distance;
+                  {/* Floating signal indicators */}
+                  {signalWaves.map((wave) => {
+                    const age = Date.now() - wave.id;
+                    const opacity = Math.max(1 - age / 4000, 0);
+                    const scale = 1 + (age / 4000) * 2;
                     
                     return (
                       <div
-                        key={sat.id}
-                        className={`absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2 ${
-                          sat.status === 'locked' ? 'bg-green-400 shadow-lg shadow-green-400/50' :
-                          sat.status === 'acquiring' ? 'bg-orange-400 shadow-lg shadow-orange-400/50' :
-                          'bg-yellow-400 shadow-lg shadow-yellow-400/50'
-                        }`}
+                        key={wave.id}
+                        className="absolute rounded-full border-2 animate-ping"
                         style={{
-                          left: `calc(50% + ${x}px)`,
-                          top: `calc(50% + ${y}px)`,
-                          animation: sat.status === 'locked' ? 'pulse 2s infinite' : 'none'
+                          left: `${20 + (wave.angle / 360) * 60}%`,
+                          top: `${20 + Math.sin(wave.angle) * 30}%`,
+                          width: `${20 * scale}px`,
+                          height: `${20 * scale}px`,
+                          borderColor: wave.color,
+                          opacity: opacity,
+                          boxShadow: `0 0 20px ${wave.color}60`
                         }}
-                        title={`${sat.name} - ${sat.status}`}
                       >
-                        {/* Signal strength indicator */}
                         <div 
-                          className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
-                            sat.signalStrength > 40 ? 'bg-green-300' :
-                            sat.signalStrength > 25 ? 'bg-yellow-300' :
-                            'bg-red-300'
-                          }`}
-                          style={{ fontSize: '6px' }}
+                          className="absolute inset-2 rounded-full"
+                          style={{ backgroundColor: wave.color, opacity: 0.3 }}
                         ></div>
                       </div>
                     );
                   })}
-                </>
+
+                  {/* Signal strength waveform */}
+                  <div className="absolute top-4 left-4 right-4">
+                    <svg className="w-full h-16" viewBox="0 0 360 64">
+                      <path
+                        d={`M 0 32 ${Array.from({ length: 72 }).map((_, i) => {
+                          const x = i * 5;
+                          const y = 32 + Math.sin((i + scanProgress) * 0.3) * 15 * (isScanning ? 1 : 0);
+                          return `L ${x} ${y}`;
+                        }).join(' ')}`}
+                        stroke="#06b6d4"
+                        strokeWidth="2"
+                        fill="none"
+                        opacity="0.8"
+                      />
+                    </svg>
+                  </div>
+                </div>
               )}
 
-              {/* Frequency bands visualization */}
-              <div className="absolute top-4 left-4 space-y-2">
-                <div className="flex items-center space-x-2 text-xs">
-                  <div className="w-3 h-1 bg-cyan-400 rounded"></div>
-                  <span className="text-cyan-400">E1 - 1575 MHz</span>
+              {/* Status overlay */}
+              {!isScanning && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <Wifi className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-500">Bereit für Signal-Analyse</p>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2 text-xs">
-                  <div className="w-3 h-1 bg-blue-400 rounded"></div>
-                  <span className="text-blue-400">E5a - 1176 MHz</span>
-                </div>
-                <div className="flex items-center space-x-2 text-xs">
-                  <div className="w-3 h-1 bg-purple-400 rounded"></div>
-                  <span className="text-purple-400">E5b - 1207 MHz</span>
-                </div>
-              </div>
-
-              {/* Signal strength meter */}
-              <div className="absolute top-4 right-4">
-                <div className="text-xs text-gray-400 mb-2">Signal</div>
-                <div className="w-4 h-32 bg-gray-800 rounded-full relative overflow-hidden">
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-500"
-                    style={{ 
-                      height: `${Math.min((satellites.reduce((sum, sat) => sum + sat.signalStrength, 0) / satellites.length) * 2, 100)}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Scan Button */}
-            <div className="text-center mt-6">
-              <button
-                onClick={startScan}
-                disabled={isScanning}
-                className={`px-8 py-3 rounded-lg font-medium transition-all ${
-                  isScanning 
-                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg hover:shadow-cyan-500/25'
-                }`}
-              >
-                {isScanning ? 'Scannen läuft...' : 'Galileo-Scan starten'}
-              </button>
-            </div>
+            {/* Control Panel */}
+            <div className="mt-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={startScan}
+                  disabled={isScanning}
+                  className={`px-8 py-3 rounded-lg font-medium transition-all ${
+                    isScanning 
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg hover:shadow-cyan-500/25'
+                  }`}
+                >
+                  {isScanning ? 'Analyse läuft...' : 'Signal-Analyse starten'}
+                </button>
 
-            {/* Progress Bar */}
-            {isScanning && (
-              <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-400 mb-2">
-                  <span>Scan-Fortschritt</span>
-                  <span>{Math.round(scanProgress)}%</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${scanProgress}%` }}
-                  ></div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-400">Erkannte Signale</div>
+                  <div className="text-2xl font-bold text-cyan-400 font-mono">
+                    {detectedSignals.toString().padStart(3, '0')}
+                  </div>
                 </div>
               </div>
-            )}
+
+              {/* Progress Bar */}
+              {isScanning && (
+                <div>
+                  <div className="flex justify-between text-sm text-gray-400 mb-2">
+                    <span>Analyse-Fortschritt</span>
+                    <span>{Math.round(scanProgress)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-800 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${scanProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -401,7 +415,7 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {satellites.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  Keine Satelliten gefunden. Starten Sie einen Scan.
+                  Keine Satelliten gefunden. Starten Sie eine Analyse.
                 </div>
               ) : (
                 satellites.map((sat) => (
@@ -455,12 +469,12 @@ const GpsTestPage: React.FC<GpsTestPageProps> = ({ onBackToOverview }) => {
       {/* Technical Info */}
       <div className="bg-gradient-to-r from-cyan-900/20 to-blue-900/20 rounded-xl p-8 border border-cyan-800/30">
         <Zap className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold mb-4 text-cyan-400 text-center">Galileo-Technologie im Test</h3>
+        <h3 className="text-2xl font-bold mb-4 text-cyan-400 text-center">Spektrum-Analyse Technologie</h3>
         <p className="text-gray-300 max-w-4xl mx-auto leading-relaxed text-center">
-          Dieser Test simuliert die Verbindung zu Galileo-Satelliten und zeigt die Funktionsweise des europäischen 
-          Satellitennavigationssystems. In der Realität würde Ihr Gerät Signale von mindestens 4 Satelliten empfangen, 
-          um eine präzise 3D-Position zu berechnen. Galileo bietet eine Genauigkeit von unter einem Meter und ist 
-          vollständig kompatibel mit anderen GNSS-Systemen wie GPS.
+          Diese Visualisierung zeigt die Echtzeit-Analyse des Galileo-Signalspektrums. Die verschiedenen 
+          Frequenzbänder (E1, E5a, E5b, E6) werden kontinuierlich überwacht, um optimale Signalqualität 
+          und Positionsgenauigkeit zu gewährleisten. Die Spektrum-Analyse ermöglicht es, Störungen zu 
+          erkennen und die beste Satellitenkombination für präzise Navigation auszuwählen.
         </p>
       </div>
     </div>
